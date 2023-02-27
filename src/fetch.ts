@@ -86,6 +86,7 @@ export function fetchEventSource(input: RequestInfo, {
         let retryInterval = DefaultRetryInterval;
         let retryTimer = 0;
         function dispose() {
+            console.log("Disposing");
             document.removeEventListener('visibilitychange', onVisibilityChange);
             window.clearTimeout(retryTimer);
             curRequestController.abort();
@@ -93,13 +94,17 @@ export function fetchEventSource(input: RequestInfo, {
 
         // if the incoming signal aborts, dispose resources and resolve:
         inputSignal?.addEventListener('abort', () => {
+            console.log("Abort Triggered");
             dispose();
-            resolve(); // don't waste time constructing/logging errors
+            reject({abort: true});
         });
 
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
+            if (curRequestController) {
+                curRequestController.abort();
+            }
             curRequestController = new AbortController();
             try {
                 const response = await fetch(input, {
